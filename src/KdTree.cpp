@@ -6,7 +6,7 @@
 KdTree::KdTree(const std::vector<Point>& p) : m_root(nullptr)
 {
 	GlobalData::OriginalPoints = p;
-	const int len = p.size();
+	const int len = static_cast<int>(p.size());
 
 	GlobalData::SortedIndices = new int[len];
 	for (int i = 0; i < len; ++i)
@@ -25,7 +25,7 @@ KdTree::KdTree(const std::vector<Point>& p) : m_root(nullptr)
 	m_low = boundBox.m_low;
 	m_high = boundBox.m_high;
 
-	m_root = RecursiveBuildKdTree(p, 0, p.size(), 2, 1, boundBox);
+	m_root = RecursiveBuildKdTree(p, 0, len, 2, 1, boundBox);
 }
 
 KdTree::~KdTree() 
@@ -53,7 +53,7 @@ void KdTree::EnclosingRectangle(std::vector<Point>& p, KdBounds& bound)
 	// x dimension
 	int low = p[0].m_x;
 	int high = p[0].m_x;
-	const int len = p.size();
+	const int len = static_cast<int>(p.size());
 	for (int i = 0; i < len; ++i)
 	{
 		if (p[i].m_x < low)
