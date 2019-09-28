@@ -3,10 +3,7 @@
 #include <algorithm>
 #include <thread>
 
-KdTree* Compute::pTree = nullptr;
-std::vector< std::vector<std::pair<Point, Point>>> outResult;
-
-void computeResult_Thread(const std::vector<Point>& points, uint32_t offset, uint32_t size, uint8_t index)
+void computeResult_Thread(const KdTree* kdTree, const std::vector<Point>& points, std::vector<std::pair<Point, Point>>& pointPairs, uint32_t offset, uint32_t size)
 {
 	size = std::min<uint32_t>(size, static_cast<uint32_t>(points.size()));
 
@@ -14,47 +11,46 @@ void computeResult_Thread(const std::vector<Point>& points, uint32_t offset, uin
 	{
 		Point outPoint;
 		Point inPoint = points[i];
-		Compute::pTree->Search(inPoint, outPoint);
+		kdTree->Search(inPoint, outPoint);
 
-		outResult[index].push_back(std::make_pair(inPoint, outPoint));
+		// reset the output value. each thread uses its own data segment so don't need to lock it.
+		pointPairs[i] = std::make_pair(inPoint, outPoint);
 	}
 }
 
 void Compute::ComputeResult(const std::vector<Point>& points, std::vector<std::pair<Point, Point>>& pointPairs)
 {
+	KdTree* kdTree = nullptr;
 	{
-		Timer load("Build Tree");
-		Compute::pTree = new KdTree(points);
+		Timer timer("BuildTree");
+		kdTree = new KdTree(points);
+	}
+	if (kdTree == nullptr)
+	{
+		std::cout << "Build KdTree failed!" << std::endl;
+		return;
 	}
 
-	pointPairs.reserve(points.size());
+	// resize output vector to set value easier.
+	pointPairs.resize(points.size());
 
+	// use multiple threads to speed up the calculating.
 	const uint32_t THREAD_NUMBER = std::thread::hardware_concurrency();
-	outResult.resize(THREAD_NUMBER);
 	std::vector<std::thread> threads(THREAD_NUMBER);
-	//std::vector<uint8_t> isCorrect(THREAD_NUMBER, 1);
 
-	Timer* caculate = new Timer("Find Result Time :");
-
-	const uint32_t pointsPerThread = static_cast<uint32_t>(ceil(points.size() / float(THREAD_NUMBER)));
-
-	for (uint32_t i = 0; i < THREAD_NUMBER; i++)
 	{
-		threads[i] = std::thread(&computeResult_Thread, points, i * pointsPerThread, (i + 1) * pointsPerThread, i);
-	}
+		Timer timer("ComputeResult");
 
-	for (uint32_t i = 0; i < THREAD_NUMBER; i++)
-	{
-		threads[i].join();
-	}
+		const uint32_t pointsPerThread = static_cast<uint32_t>(ceil(points.size() / float(THREAD_NUMBER)));
 
-	delete caculate;
-
-	for (uint32_t i = 0; i < THREAD_NUMBER; i++)
-	{
-		//if (isCorrect[i] == 0)
+		for (uint32_t i = 0; i < THREAD_NUMBER; i++)
 		{
-			pointPairs.insert(pointPairs.end(), outResult[i].begin(), outResult[i].end());
+			threads[i] = std::thread(&computeResult_Thread, kdTree, points, std::ref(pointPairs), i * pointsPerThread, (i + 1) * pointsPerThread);
+		}
+
+		for (uint32_t i = 0; i < THREAD_NUMBER; i++)
+		{
+			threads[i].join();
 		}
 	}
 }

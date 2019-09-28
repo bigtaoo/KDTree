@@ -7,6 +7,5 @@
 class Compute
 {
 public:
-	static KdTree* pTree;
 	static void ComputeResult(const std::vector<Point>& points, std::vector<std::pair<Point, Point>>& pointPairs);
 };
