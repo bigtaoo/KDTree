@@ -11,6 +11,6 @@ public:
 	void Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) override;
 
 private:
-	int m_elementCount;
+	int m_elementsCount;
 	int m_startPos;
 };
