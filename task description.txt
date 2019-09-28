@@ -1,0 +1,22 @@
+Gritworld GmbH Coding Test
+
+Problem:
+You get a set of 2D points in a file named point_set_small.txt and point_set_big.txt. It is guaranteed that each point is unique
+and that only one solution exists. We provide a small framework to read 
+in the content of the files. Your task is to find for each point the closest neighboring point. 
+You can compare your results with our solution in the solution_small.txt and solution_big.txt.
+The pair is structured like: <point, closest neighbor of the point>. 
+We favour a solution you are proud of more than a quick and dirty one, so take your time.
+The point_set_small.txt is for testing and contains only 10 points. point_set_big.txt contains 100000 points.
+The points are scattered in the range between ([0, 1000000], [0, 1000000]).
+Feel free to add your own classes. Add a small text which describes your solution.
+
+
+Conditions:
+- programming language is C++
+- no third party library beside of STL
+
+We care about:
+- code style: The code should be readable.
+- performance: The solution should be faster than brute force, making use of a multi core processor is a bonus.
+- elegancy: The solution should be simple.
