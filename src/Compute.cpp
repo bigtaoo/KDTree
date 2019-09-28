@@ -53,4 +53,10 @@ void Compute::ComputeResult(const std::vector<Point>& points, std::vector<std::p
 			threads[i].join();
 		}
 	}
+
+	if (kdTree != nullptr)
+	{
+		delete kdTree;
+		kdTree = nullptr;
+	}
 }

@@ -1,4 +1,6 @@
 #include "../include/KdSplit.h"
+#include "../include/GlobalData.h"
+#include "../include/KdLeaf.h"
 
 KdSplit::KdSplit(int cutDim, int64_t cutVal, int64_t boundLow, int64_t boundHigh, KdNode* childLow, KdNode* childHigh) :
 	m_cutDim(cutDim), m_cutVal(cutVal)
@@ -13,7 +15,7 @@ KdSplit::~KdSplit()
 {
 	for (int i = 0; i < BI_MAX; ++i)
 	{
-		if (m_child[i] != nullptr)
+		if (m_child[i] != nullptr && m_child[i] != dynamic_cast<KdNode*>(GlobalData::TrivialLeaf))
 		{
 			delete m_child[i];
 			m_child[i] = nullptr;
