@@ -115,12 +115,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\Compute.cpp" />
+    <ClCompile Include="..\..\src\GlobalData.cpp" />
+    <ClCompile Include="..\..\src\KdLeaf.cpp" />
+    <ClCompile Include="..\..\src\KdSplit.cpp" />
+    <ClCompile Include="..\..\src\KdTree.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Parser.cpp" />
     <ClCompile Include="..\..\src\Point.cpp" />
     <ClCompile Include="..\..\src\PointValidation.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\Compute.h" />
+    <ClInclude Include="..\..\include\GlobalData.h" />
+    <ClInclude Include="..\..\include\KdBounds.h" />
+    <ClInclude Include="..\..\include\KdLeaf.h" />
+    <ClInclude Include="..\..\include\KdNode.h" />
+    <ClInclude Include="..\..\include\KdSplit.h" />
+    <ClInclude Include="..\..\include\KdTree.h" />
     <ClInclude Include="..\..\include\Parser.h" />
     <ClInclude Include="..\..\include\Point.h" />
     <ClInclude Include="..\..\include\PointValidation.h" />
