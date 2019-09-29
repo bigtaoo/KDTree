@@ -4,8 +4,8 @@ The splitting scheme is a k-dimension tree, which divides the current node into 
 
 Test result:
 Computer Configuration: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz   * 8.
-Release version: BuildTree: 38ms, ComputeResult: 64ms. 
-Debug version: BuildTree: 2315ms, ComputeResult: 1504ms. 
+Release version: BuildTree: 46ms, ComputeResult: 88ms. 
+Debug version: BuildTree: 351ms, ComputeResult: 763ms. 
 Each time the result has a bit different, so this value is an average of 100 tests.
 
 Build Tree:
