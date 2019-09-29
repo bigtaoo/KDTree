@@ -1,1 +1,25 @@
 Main point:
+Reduce the counts of comparisons per query by dividing the points into a smaller plane. 
+The splitting scheme is a k-dimension tree, which divides the current node into a binary tree on the x-axis or y-axis.
+
+Test result:
+Computer Configuration: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz   * 8.
+Release version: BuildTree: 38ms, ComputeResult: 64ms. 
+Debug version: BuildTree: 2315ms, ComputeResult: 1504ms. 
+Each time the result has a bit different, so this value is an average of 100 tests.
+
+Build Tree:
+1, Use the range of the current node to determine whether to split the x-axis or y-axis.
+2. Determine the cut value. Usually by evenly divided, but when there is no element in one side, it extends to the edge of the other side.
+3. Exchange the elements in the node according to the cut value, the left node stores the smaller value, and the right node stores the larger value.
+4. Recursive the process above until the node has only one element or no elements.
+
+The node generated during the splitting process is called KdSplit, which stores the split information, include the cut axis, the cut value, the bound of the node, and the child nodes.
+The final node called KdLeaf, which stores the point information. It contains either one point of the query set or an invalid point which means there are no elements in this node.
+
+Search:
+1, Find the node that contains the query point.
+2, Recursive each previous node. If the distance between the query point and the bound of the node is less than previous distance, then compare it.
+3, get the nearest index of neighbor.
+
+We compared the previous minimum distance with the bound of the node so that the query of many nodes can be skipped. 
