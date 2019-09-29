@@ -6,8 +6,8 @@
 
 int main(int argc, const char **argv)
 {
-	const std::string pointSetFilename = "../../point_set_big.txt";
-	const std::string solutionFilename = "../../solution_big.txt";
+	const std::string pointSetFilename = "../point_set_big.txt";
+	const std::string solutionFilename = "../solution_big.txt";
 
 	std::vector<Point> points;
 	{
