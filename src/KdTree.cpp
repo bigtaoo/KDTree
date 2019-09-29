@@ -30,7 +30,7 @@ KdTree::KdTree(const std::vector<Point>& p) : m_root(nullptr)
 	m_high = boundBox.m_high;
 
 	// build the tree.
-	m_root = RecursiveBuildKdTree(p, 0, len, 2, 1, boundBox);
+	m_root = RecursiveBuildKdTree(p, 0, len, 2, boundBox);
 }
 
 KdTree::~KdTree() 
@@ -71,8 +71,8 @@ void KdTree::Search(const Point& q, Point& out) const
 void KdTree::GetBoundBox(const std::vector<Point>& p, KdBounds& bound)
 {
 	// x dimension
-	int low = p[0].m_x;
-	int high = p[0].m_x;
+	int32_t low = p[0].m_x;
+	int32_t high = p[0].m_x;
 	const int len = static_cast<int>(p.size());
 	for (int i = 0; i < len; ++i)
 	{
@@ -106,42 +106,38 @@ void KdTree::GetBoundBox(const std::vector<Point>& p, KdBounds& bound)
 	bound.m_high.m_y = high;
 }
 
-void KdTree::Split(const std::vector<Point>& p, int start, int n, int Dimension, const KdBounds& bound, int& cutDim, int& cutValue, int& lowPointsNumber)
+void KdTree::Split(const std::vector<Point>& p, int offset, int size, int dimension, const KdBounds& bound, int& cutDimension, int32_t& cutValue, int& lowPointsNumber)
 {
-	int maxLengthX = bound.m_high.m_x - bound.m_low.m_x;
-	int maxLengthY = bound.m_high.m_y - bound.m_low.m_y;
-	int maxLength = maxLengthX > maxLengthY ? maxLengthX : maxLengthY;
-
-	int maxSpread = -1;
-
+	// determine the cut dimension.
+	// compare the spread on each dimension and choose the larger one.
+	int32_t maxLengthX = bound.m_high.m_x - bound.m_low.m_x;
+	int32_t maxLengthY = bound.m_high.m_y - bound.m_low.m_y;
+	int32_t maxLength = maxLengthX > maxLengthY ? maxLengthX : maxLengthY;
+	int32_t maxSpread = -1;
 	if (bound.m_high.m_x - bound.m_low.m_x >= maxLength)
 	{
-		int spread = Spread(p, start, n, 0);
+		int32_t spread = GetSpread(p, offset, size, 0);
 		if (spread > maxSpread)
 		{
 			maxSpread = spread;
-			cutDim = 0;
+			cutDimension = 0;
 		}
 	}
 	if (bound.m_high.m_y - bound.m_low.m_y >= maxLength)
 	{
-		int spread = Spread(p, start, n, 1);
+		int32_t spread = GetSpread(p, offset, size, 1);
 		if (spread > maxSpread)
 		{
 			maxSpread = spread;
-			cutDim = 1;
+			cutDimension = 1;
 		}
 	}
 
-	int idealCutValue = (bound.m_low.m_x + bound.m_high.m_x) / 2;
-	if (cutDim == 1)
-	{
-		idealCutValue = (bound.m_low.m_y + bound.m_high.m_y) / 2;
-	}
-
-	int min, max;
-	MinMax(p, start, n, cutDim, min, max);
-
+	// determine the cut value.
+	// the default is evenly divided, but it extends to the edge if there are no elements on one side.
+	int32_t idealCutValue = (cutDimension == 1) ? ((bound.m_low.m_y + bound.m_high.m_y) / 2) : ((bound.m_low.m_x + bound.m_high.m_x) / 2);
+	int32_t min, max;
+	FindCutValueBound(p, offset, size, cutDimension, min, max);
 	if (idealCutValue < min)
 	{
 		cutValue = min;
@@ -156,7 +152,7 @@ void KdTree::Split(const std::vector<Point>& p, int start, int n, int Dimension,
 	}
 
 	int br1, br2;
-	PlaneSplit(p, start, n, cutDim, cutValue, br1, br2);
+	SortSplit(p, offset, size, cutDimension, cutValue, br1, br2);
 
 	if (idealCutValue < min)
 	{
@@ -164,32 +160,33 @@ void KdTree::Split(const std::vector<Point>& p, int start, int n, int Dimension,
 	}
 	else if (idealCutValue > max)
 	{
-		lowPointsNumber = n - 1;
+		lowPointsNumber = size - 1;
 	}
-	else if (br1 > n / 2)
+	else if (br1 > size / 2)
 	{
-		lowPointsNumber = br1 - start;
+		lowPointsNumber = br1 - offset;
 	}
-	else if (br2 < n / 2)
+	else if (br2 < size / 2)
 	{
-		lowPointsNumber = br2 - start;
+		lowPointsNumber = br2 - offset;
 	}
 	else
 	{
-		lowPointsNumber = n / 2;
+		lowPointsNumber = size / 2;
 	}
 }
 
-int KdTree::Spread(const std::vector<Point>& p, int start, int n, int d)
+int32_t KdTree::GetSpread(const std::vector<Point>& p, int offset, int size, int dimension)
 {
-	if (d == 0)
+	// x-axis.
+	if (dimension == 0)
 	{
-		int min = p[start].m_x;
-		int max = p[start].m_x;
+		int32_t min = p[offset].m_x;
+		int32_t max = p[offset].m_x;
 
-		for (int i = 1; i < n; ++i)
+		for (int i = 1; i < size; ++i)
 		{
-			int c = p[i].m_x;
+			int32_t c = p[i].m_x;
 			if (c < min)
 			{
 				min = c;
@@ -201,35 +198,57 @@ int KdTree::Spread(const std::vector<Point>& p, int start, int n, int d)
 		}
 		return max - min;
 	}
-
-	int min = p[start].m_y;
-	int max = p[start].m_y;
-
-	for (int i = 1; i < n; ++i)
+	// y-axis.
+	else if (dimension == 1)
 	{
-		int c = p[i].m_y;
-		if (c < min)
+		int32_t min = p[offset].m_y;
+		int32_t max = p[offset].m_y;
+
+		for (int i = 1; i < size; ++i)
 		{
-			min = c;
+			int32_t c = p[i].m_y;
+			if (c < min)
+			{
+				min = c;
+			}
+			else if (c > max)
+			{
+				max = c;
+			}
 		}
-		else if (c > max)
-		{
-			max = c;
-		}
+		return max - min;
 	}
-	return max - min;
+	return 0;
 }
 
-void KdTree::MinMax(const std::vector<Point>& p, int start, int n, int d, int& min, int& max)
+void KdTree::FindCutValueBound(const std::vector<Point>& p, int offset, int size, int dimension, int32_t& min, int32_t& max)
 {
-	if (d == 0)
+	if (dimension == 0)
 	{
-		min = p[GlobalData::SortedIndices[start]].m_x;
-		max = p[GlobalData::SortedIndices[start]].m_x;
+		min = p[GlobalData::SortedIndices[offset]].m_x;
+		max = p[GlobalData::SortedIndices[offset]].m_x;
 
-		for (int i = 0; i < n; ++i)
+		for (int i = 0; i < size; ++i)
 		{
-			int c = p[GlobalData::SortedIndices[start + i]].m_x;
+			int32_t c = p[GlobalData::SortedIndices[offset + i]].m_x;
+			if (c < min)
+			{
+				min = c;
+			}
+			else if (c > max)
+			{
+				max = c;
+			}
+		}
+	}
+	else if(dimension == 1)
+	{
+		min = p[GlobalData::SortedIndices[offset]].m_y;
+		max = p[GlobalData::SortedIndices[offset]].m_y;
+
+		for (int i = 0; i < size; ++i)
+		{
+			int32_t c = p[GlobalData::SortedIndices[offset + i]].m_y;
 			if (c < min)
 			{
 				min = c;
@@ -242,87 +261,77 @@ void KdTree::MinMax(const std::vector<Point>& p, int start, int n, int d, int& m
 	}
 	else
 	{
-		min = p[GlobalData::SortedIndices[start]].m_y;
-		max = p[GlobalData::SortedIndices[start]].m_y;
-
-		for (int i = 0; i < n; ++i)
-		{
-			int c = p[GlobalData::SortedIndices[start + i]].m_y;
-			if (c < min)
-			{
-				min = c;
-			}
-			else if (c > max)
-			{
-				max = c;
-			}
-		}
+		min = 0;
+		max = 0;
 	}
 }
 
-void KdTree::PlaneSplit(const std::vector<Point>& p, int start, int n, int d, int cv, int& br1, int& br2)
+void KdTree::SortSplit(const std::vector<Point>& p, int offset, int size, int dimension, int32_t cutValue, int& lowBreak, int& highBreak)
 {
-	if (d == 0)
+	// x-axis.
+	if (dimension == 0)
 	{
-		int l = start;
-		int r = start + n - 1;
+		// exchange smaller element to left.
+		int left = offset;
+		int right = offset + size - 1;
 		for (;;)
 		{
-			while (l < (start + n) && p[GlobalData::SortedIndices[l]].m_x < cv)
+			while (left < (offset + size) && p[GlobalData::SortedIndices[left]].m_x < cutValue)
 			{
-				l++;
+				left++;
 			}
-			while (r >= 0 && p[GlobalData::SortedIndices[r]].m_x >= cv)
+			while (right >= 0 && p[GlobalData::SortedIndices[right]].m_x >= cutValue)
 			{
-				r--;
+				right--;
 			}
-			if (l > r)
+			if (left > right)
 			{
 				break;
 			}
-			int temp = GlobalData::SortedIndices[l];
-			GlobalData::SortedIndices[l] = GlobalData::SortedIndices[r];
-			GlobalData::SortedIndices[r] = temp;
+			int temp = GlobalData::SortedIndices[left];
+			GlobalData::SortedIndices[left] = GlobalData::SortedIndices[right];
+			GlobalData::SortedIndices[right] = temp;
 
-			l++;
-			r--;
+			left++;
+			right--;
 		}
-		br1 = l;
-		r = start + n - 1;
+		lowBreak = left;
+
+		right = offset + size - 1;
 		for (;;)
 		{
-			while (l < (start + n) && p[GlobalData::SortedIndices[l]].m_x <= cv)
+			while (left < (offset + size) && p[GlobalData::SortedIndices[left]].m_x <= cutValue)
 			{
-				l++;
+				left++;
 			}
-			while (r >= br1 && p[GlobalData::SortedIndices[r]].m_x > cv)
+			while (right >= lowBreak && p[GlobalData::SortedIndices[right]].m_x > cutValue)
 			{
-				r--;
+				right--;
 			}
-			if (l > r)
+			if (left > right)
 			{
 				break;
 			}
-			int temp = GlobalData::SortedIndices[l];
-			GlobalData::SortedIndices[l] = GlobalData::SortedIndices[r];
-			GlobalData::SortedIndices[r] = temp;
+			int temp = GlobalData::SortedIndices[left];
+			GlobalData::SortedIndices[left] = GlobalData::SortedIndices[right];
+			GlobalData::SortedIndices[right] = temp;
 
-			l++;
-			r--;
+			left++;
+			right--;
 		}
-		br2 = l;
+		highBreak = left;
 	}
 	else
 	{
-		int l = start;
-		int r = start + n - 1;
+		int l = offset;
+		int r = offset + size - 1;
 		for (;;)
 		{
-			while (l < (n + start) && p[GlobalData::SortedIndices[l]].m_y < cv)
+			while (l < (size + offset) && p[GlobalData::SortedIndices[l]].m_y < cutValue)
 			{
 				l++;
 			}
-			while (r >= 0 && p[GlobalData::SortedIndices[r]].m_y >= cv)
+			while (r >= 0 && p[GlobalData::SortedIndices[r]].m_y >= cutValue)
 			{
 				r--;
 			}
@@ -336,15 +345,15 @@ void KdTree::PlaneSplit(const std::vector<Point>& p, int start, int n, int d, in
 			l++;
 			r--;
 		}
-		br1 = l;
-		r = start + n - 1;
+		lowBreak = l;
+		r = offset + size - 1;
 		for (;;)
 		{
-			while (l < (start + n) && p[GlobalData::SortedIndices[l]].m_y <= cv)
+			while (l < (offset + size) && p[GlobalData::SortedIndices[l]].m_y <= cutValue)
 			{
 				l++;
 			}
-			while (r >= br1 && p[GlobalData::SortedIndices[r]].m_y > cv)
+			while (r >= lowBreak && p[GlobalData::SortedIndices[r]].m_y > cutValue)
 			{
 				r--;
 			}
@@ -358,7 +367,7 @@ void KdTree::PlaneSplit(const std::vector<Point>& p, int start, int n, int d, in
 			l++;
 			r--;
 		}
-		br2 = l;
+		highBreak = l;
 	}
 }
 
@@ -392,56 +401,55 @@ int64_t KdTree::BoxDistance(const Point& q, const Point& low, const Point& high)
 	return distance;
 }
 
-KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int lowPos, int n, int Dimension, int bucketSpace, KdBounds& bound)
+KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int offset, int size, int Dimension, KdBounds& bound)
 {
-	if (n <= bucketSpace)
+	// this split has no elements.
+	if (size == 0)
 	{
-		if (n == 0)
-		{
-			return GlobalData::TrivialLeaf;
-		}
-		else
-		{
-			return new KdLeaf(n, lowPos);
-		}
+		return GlobalData::TrivialLeaf;	
 	}
+	// final leaf.
+	else if(size == 1)
+	{
+		return new KdLeaf(size, offset);
+	}
+	// build split.
 	else
 	{
-		int cutDimension;
-		int cutValue;
-		int lowPointsNumber;
-		KdNode* low;
-		KdNode* high;
+		int32_t cutDimension, cutValue, lowPointsNumber;
+		KdNode* low, * high;
 
-		Split(p, lowPos, n, Dimension, bound, cutDimension, cutValue, lowPointsNumber);
+		Split(p, offset, size, Dimension, bound, cutDimension, cutValue, lowPointsNumber);
 
+		// split x-axis.
 		if (cutDimension == 0)
 		{
-			int lowValue = bound.m_low.m_x;
-			int highValue = bound.m_high.m_x;
+			int32_t lowValue = bound.m_low.m_x;
+			int32_t highValue = bound.m_high.m_x;
 
 			bound.m_high.m_x = cutValue;
-			low = RecursiveBuildKdTree(p, lowPos, lowPointsNumber, Dimension, bucketSpace, bound);
+			low = RecursiveBuildKdTree(p, offset, lowPointsNumber, Dimension, bound);
 			bound.m_high.m_x = highValue;
 
 			bound.m_low.m_x = cutValue;
-			high = RecursiveBuildKdTree(p, lowPos + lowPointsNumber, n - lowPointsNumber, Dimension, bucketSpace, bound);
+			high = RecursiveBuildKdTree(p, offset + lowPointsNumber, size - lowPointsNumber, Dimension, bound);
 			bound.m_low.m_x = lowValue;
 
 			KdSplit *ptr = new KdSplit(cutDimension, cutValue, lowValue, highValue, low, high);
 			return ptr;
 		}
+		// split y-axis.
 		else
 		{
-			int lowValue = bound.m_low.m_y;
-			int highValue = bound.m_high.m_y;
+			int32_t lowValue = bound.m_low.m_y;
+			int32_t highValue = bound.m_high.m_y;
 
 			bound.m_high.m_y = cutValue;
-			low = RecursiveBuildKdTree(p, lowPos, lowPointsNumber, Dimension, bucketSpace, bound);
+			low = RecursiveBuildKdTree(p, offset, lowPointsNumber, Dimension, bound);
 			bound.m_high.m_y = highValue;
 
 			bound.m_low.m_y = cutValue;
-			high = RecursiveBuildKdTree(p, lowPos + lowPointsNumber, n - lowPointsNumber, Dimension, bucketSpace, bound);
+			high = RecursiveBuildKdTree(p, offset + lowPointsNumber, size - lowPointsNumber, Dimension, bound);
 			bound.m_low.m_y = lowValue;
 
 			KdSplit *ptr = new KdSplit(cutDimension, cutValue, lowValue, highValue, low, high);
