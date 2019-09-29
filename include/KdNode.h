@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include "Point.h"
 
+struct Point;
 class KdNode
 {
 public:

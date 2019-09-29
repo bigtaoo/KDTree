@@ -1,7 +1,8 @@
 #include "../include/KdLeaf.h"
 #include "../include/GlobalData.h"
+#include "../include/Point.h"
 
-KdLeaf::KdLeaf(int count, int start) : m_elementsCount(count), m_startPos(start)
+KdLeaf::KdLeaf(int size, int offset) : m_size(size), m_offset(offset)
 {
 }
 
@@ -13,24 +14,25 @@ void KdLeaf::Search(const Point& q, int64_t distance, int64_t& smallDistance, in
 {
 	int64_t dis = 0;
 
-	for (int i = 0; i < m_elementsCount; ++i)
+	for (int i = 0; i < m_size; ++i)
 	{
-		const Point& p = GlobalData::OriginalPoints[GlobalData::SortedIndices[m_startPos + i]];
+		const Point& p = GlobalData::OriginalPoints[GlobalData::SortedIndices[m_offset + i]];
 		dis = 0;
 
-		int64_t x = q.m_x - p.m_x;
-		int64_t y = q.m_y - p.m_y;
-
+		// get the distance between the query point and the check point.
+		int64_t x = int64_t(q.m_x - p.m_x);
+		int64_t y = int64_t(q.m_y - p.m_y);
 		dis += (x * x + y * y);
 		if (dis > smallDistance)
 		{
 			break;
 		}
 
+		// if it is not itself and nearer the query point than the previous point.
 		if (dis != 0 && dis < smallDistance)
 		{
 			smallDistance = dis;
-			smallPointIndex = GlobalData::SortedIndices[m_startPos + i];
+			smallPointIndex = GlobalData::SortedIndices[m_offset + i];
 		}
 	}
 }

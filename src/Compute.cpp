@@ -1,5 +1,6 @@
 #include "../include/Compute.h"
 #include "../include/Timer.h"
+#include "../include/KdTree.h"
 #include <algorithm>
 #include <thread>
 
@@ -40,14 +41,11 @@ void Compute::ComputeResult(const std::vector<Point>& points, std::vector<std::p
 
 	{
 		Timer timer("ComputeResult");
-
 		const uint32_t pointsPerThread = static_cast<uint32_t>(ceil(points.size() / float(THREAD_NUMBER)));
-
 		for (uint32_t i = 0; i < THREAD_NUMBER; i++)
 		{
 			threads[i] = std::thread(&computeResult_Thread, kdTree, points, std::ref(pointPairs), i * pointsPerThread, (i + 1) * pointsPerThread);
 		}
-
 		for (uint32_t i = 0; i < THREAD_NUMBER; i++)
 		{
 			threads[i].join();

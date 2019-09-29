@@ -2,8 +2,8 @@
 #include "../include/GlobalData.h"
 #include "../include/KdLeaf.h"
 
-KdSplit::KdSplit(int cutDim, int64_t cutVal, int64_t boundLow, int64_t boundHigh, KdNode* childLow, KdNode* childHigh) :
-	m_cutDim(cutDim), m_cutVal(cutVal)
+KdSplit::KdSplit(int cutDimension, int64_t cutValue, int64_t boundLow, int64_t boundHigh, KdNode* childLow, KdNode* childHigh) :
+	m_cutDimension(cutDimension), m_cutValue(cutValue)
 {
 	m_bounds[BI_LOW] = boundLow;
 	m_bounds[BI_HIGH] = boundHigh;
@@ -25,21 +25,21 @@ KdSplit::~KdSplit()
 
 void KdSplit::Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) const
 {
-	// get query point is in the left node or in the right node.
-	int64_t cutDiff = (m_cutDim == 1) ? (int64_t(q.m_y) - m_cutVal) : (int64_t(q.m_x) - m_cutVal);
+	// get the distance to the cutting node.
+	int64_t cutDistance = (m_cutDimension == 1) ? (int64_t(q.m_y) - m_cutValue) : (int64_t(q.m_x) - m_cutValue);
 
 	// left node
-	if (cutDiff < 0)
+	if (cutDistance < 0)
 	{
 		m_child[BI_LOW]->Search(q, distance, smallDistance, smallPointIndex);
 
 		// determine whether to check the node of the other side by check the overlap of the distance and the bounds of the other side.
-		int64_t boxDiff = (m_cutDim == 1) ? (m_bounds[BI_LOW] - int64_t(q.m_y)) : (m_bounds[BI_LOW] - int64_t(q.m_x));
-		if (boxDiff < 0)
+		int64_t boundDistance = (m_cutDimension == 1) ? (m_bounds[BI_LOW] - int64_t(q.m_y)) : (m_bounds[BI_LOW] - int64_t(q.m_x));
+		if (boundDistance < 0)
 		{
-			boxDiff = 0;
+			boundDistance = 0;
 		}
-		distance += (cutDiff * cutDiff - boxDiff * boxDiff);
+		distance += (cutDistance * cutDistance - boundDistance * boundDistance);
 		if (distance < smallDistance)
 		{
 			m_child[BI_HIGH]->Search(q, distance, smallDistance, smallPointIndex);
@@ -51,12 +51,12 @@ void KdSplit::Search(const Point& q, int64_t distance, int64_t& smallDistance, i
 		m_child[BI_HIGH]->Search(q, distance, smallDistance, smallPointIndex);
 
 		// determine whether to check the node of the other side.
-		int64_t boxDiff = (m_cutDim == 1) ? (int64_t(q.m_y) - m_bounds[BI_HIGH]) : (int64_t(q.m_x) - m_bounds[BI_HIGH]);
-		if (boxDiff < 0)
+		int64_t boundDistance = (m_cutDimension == 1) ? (int64_t(q.m_y) - m_bounds[BI_HIGH]) : (int64_t(q.m_x) - m_bounds[BI_HIGH]);
+		if (boundDistance < 0)
 		{
-			boxDiff = 0;
+			boundDistance = 0;
 		}
-		distance += (cutDiff * cutDiff - boxDiff * boxDiff);
+		distance += (cutDistance * cutDistance - boundDistance * boundDistance);
 		if (distance < smallDistance)
 		{
 			m_child[BI_LOW]->Search(q, distance, smallDistance, smallPointIndex);

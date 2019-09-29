@@ -5,12 +5,12 @@
 class KdLeaf : public KdNode
 {
 public:
-	KdLeaf(int count, int start);
+	KdLeaf(int size, int offset);
 	~KdLeaf();
 
 	void Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) const override;
 
 private:
-	int m_elementsCount;
-	int m_startPos;
+	int m_size; // 1 or 0. 
+	int m_offset; // the offset indices of this leaf. 
 };

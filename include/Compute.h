@@ -1,9 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "Point.h"
-#include "KdTree.h"
 
+struct Point;
 class Compute
 {
 public:

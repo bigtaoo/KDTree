@@ -2,16 +2,11 @@
 
 #include <vector>
 #include "Point.h"
-#include "KdBounds.h"
 
 class KdNode;
+struct KdBounds;
 class KdTree
 {
-private:
-	KdNode* m_root;
-	Point m_low;
-	Point m_high;
-
 public:
 	KdTree(const std::vector<Point>& p);
 	~KdTree();
@@ -32,4 +27,9 @@ private:
 	int64_t GetBoundDistance(const Point& q, const Point& low, const Point& high) const;
 	// use recursive to build k-dimension tree.
 	KdNode* RecursiveBuildKdTree(const std::vector<Point>& p, int offset, int size, KdBounds& bound);
+
+private:
+	KdNode* m_root;
+	Point m_low;
+	Point m_high;
 };
