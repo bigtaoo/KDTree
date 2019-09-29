@@ -23,7 +23,7 @@ KdSplit::~KdSplit()
 	}
 }
 
-void KdSplit::Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex)
+void KdSplit::Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) const
 {
 	// get query point is in the left node or in the right node.
 	int64_t cutDiff = (m_cutDim == 1) ? (int64_t(q.m_y) - m_cutVal) : (int64_t(q.m_x) - m_cutVal);

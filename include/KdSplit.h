@@ -9,7 +9,7 @@ public:
 	KdSplit(int cutDim, int64_t cutVal, int64_t boundLow, int64_t boundHigh, KdNode* childLow = nullptr, KdNode* childHigh = nullptr);
 	~KdSplit();
 
-	void Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) override;
+	void Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) const override;
 
 private:
 	int m_cutDim;	// cut dimensionality of current node (x or y).

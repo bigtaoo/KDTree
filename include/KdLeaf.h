@@ -8,7 +8,7 @@ public:
 	KdLeaf(int count, int start);
 	~KdLeaf();
 
-	void Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) override;
+	void Search(const Point& q, int64_t distance, int64_t& smallDistance, int& smallPointIndex) const override;
 
 private:
 	int m_elementsCount;

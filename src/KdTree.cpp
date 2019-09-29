@@ -57,7 +57,7 @@ KdTree::~KdTree()
 
 void KdTree::Search(const Point& q, Point& out) const
 {
-	int64_t dis = BoxDistance(q, m_low, m_high);
+	int64_t dis = GetBoundDistance(q, m_low, m_high);
 	int64_t smallDistance = std::numeric_limits<int64_t>::max();
 	int smallPointIndex = 0;
 
@@ -137,7 +137,7 @@ void KdTree::Split(const std::vector<Point>& p, int offset, int size, int dimens
 	// the default is evenly divided, but it extends to the edge if there are no elements on one side.
 	int32_t idealCutValue = (cutDimension == 1) ? ((bound.m_low.m_y + bound.m_high.m_y) / 2) : ((bound.m_low.m_x + bound.m_high.m_x) / 2);
 	int32_t min, max;
-	FindCutValueBound(p, offset, size, cutDimension, min, max);
+	FindMaxRange(p, offset, size, cutDimension, min, max);
 	if (idealCutValue < min)
 	{
 		cutValue = min;
@@ -151,27 +151,33 @@ void KdTree::Split(const std::vector<Point>& p, int offset, int size, int dimens
 		cutValue = idealCutValue;
 	}
 
-	int br1, br2;
-	SortSplit(p, offset, size, cutDimension, cutValue, br1, br2);
+	int break1, break2;
+	// p[offset..break1] < cutValue
+	// p[break1..break2-1] == cutValue
+	// p[break2..size-1] > cutValue
+	SortSplit(p, offset, size, cutDimension, cutValue, break1, break2);
 
+	// there is no element on left, so we choose one put in left.
 	if (idealCutValue < min)
 	{
 		lowPointsNumber = 1;
 	}
+	// there is no element on right, so we choose one put in right.
 	else if (idealCutValue > max)
 	{
 		lowPointsNumber = size - 1;
 	}
-	else if (br1 > size / 2)
+	else if (break1 > size / 2)
 	{
-		lowPointsNumber = br1 - offset;
+		lowPointsNumber = break1 - offset;
 	}
-	else if (br2 < size / 2)
+	else if (break2 < size / 2)
 	{
-		lowPointsNumber = br2 - offset;
+		lowPointsNumber = break2 - offset;
 	}
 	else
 	{
+		// all the element is the same.
 		lowPointsNumber = size / 2;
 	}
 }
@@ -186,14 +192,14 @@ int32_t KdTree::GetSpread(const std::vector<Point>& p, int offset, int size, int
 
 		for (int i = 1; i < size; ++i)
 		{
-			int32_t c = p[i].m_x;
-			if (c < min)
+			const int32_t& x = p[i].m_x;
+			if (x < min)
 			{
-				min = c;
+				min = x;
 			}
-			else if (c > max)
+			else if (x > max)
 			{
-				max = c;
+				max = x;
 			}
 		}
 		return max - min;
@@ -206,14 +212,14 @@ int32_t KdTree::GetSpread(const std::vector<Point>& p, int offset, int size, int
 
 		for (int i = 1; i < size; ++i)
 		{
-			int32_t c = p[i].m_y;
-			if (c < min)
+			const int32_t& y = p[i].m_y;
+			if (y < min)
 			{
-				min = c;
+				min = y;
 			}
-			else if (c > max)
+			else if (y > max)
 			{
-				max = c;
+				max = y;
 			}
 		}
 		return max - min;
@@ -221,8 +227,9 @@ int32_t KdTree::GetSpread(const std::vector<Point>& p, int offset, int size, int
 	return 0;
 }
 
-void KdTree::FindCutValueBound(const std::vector<Point>& p, int offset, int size, int dimension, int32_t& min, int32_t& max)
+void KdTree::FindMaxRange(const std::vector<Point>& p, int offset, int size, int dimension, int32_t& min, int32_t& max)
 {
+	// x-axis.
 	if (dimension == 0)
 	{
 		min = p[GlobalData::SortedIndices[offset]].m_x;
@@ -230,17 +237,18 @@ void KdTree::FindCutValueBound(const std::vector<Point>& p, int offset, int size
 
 		for (int i = 0; i < size; ++i)
 		{
-			int32_t c = p[GlobalData::SortedIndices[offset + i]].m_x;
-			if (c < min)
+			const int32_t& x = p[GlobalData::SortedIndices[offset + i]].m_x;
+			if (x < min)
 			{
-				min = c;
+				min = x;
 			}
-			else if (c > max)
+			else if (x > max)
 			{
-				max = c;
+				max = x;
 			}
 		}
 	}
+	// y-axis.
 	else if(dimension == 1)
 	{
 		min = p[GlobalData::SortedIndices[offset]].m_y;
@@ -248,14 +256,14 @@ void KdTree::FindCutValueBound(const std::vector<Point>& p, int offset, int size
 
 		for (int i = 0; i < size; ++i)
 		{
-			int32_t c = p[GlobalData::SortedIndices[offset + i]].m_y;
-			if (c < min)
+			const int32_t& y = p[GlobalData::SortedIndices[offset + i]].m_y;
+			if (y < min)
 			{
-				min = c;
+				min = y;
 			}
-			else if (c > max)
+			else if (y > max)
 			{
-				max = c;
+				max = y;
 			}
 		}
 	}
@@ -266,7 +274,7 @@ void KdTree::FindCutValueBound(const std::vector<Point>& p, int offset, int size
 	}
 }
 
-void KdTree::SortSplit(const std::vector<Point>& p, int offset, int size, int dimension, int32_t cutValue, int& lowBreak, int& highBreak)
+void KdTree::SortSplit(const std::vector<Point>& p, int offset, int size, int dimension, int32_t cutValue, int& break1, int& break2)
 {
 	// x-axis.
 	if (dimension == 0)
@@ -295,8 +303,8 @@ void KdTree::SortSplit(const std::vector<Point>& p, int offset, int size, int di
 			left++;
 			right--;
 		}
-		lowBreak = left;
-
+		break1 = left;
+		// now p[offset..break1-1] < cutValue <= p[break1..offset+size-1]
 		right = offset + size - 1;
 		for (;;)
 		{
@@ -304,7 +312,7 @@ void KdTree::SortSplit(const std::vector<Point>& p, int offset, int size, int di
 			{
 				left++;
 			}
-			while (right >= lowBreak && p[GlobalData::SortedIndices[right]].m_x > cutValue)
+			while (right >= break1 && p[GlobalData::SortedIndices[right]].m_x > cutValue)
 			{
 				right--;
 			}
@@ -319,59 +327,61 @@ void KdTree::SortSplit(const std::vector<Point>& p, int offset, int size, int di
 			left++;
 			right--;
 		}
-		highBreak = left;
+		break2 = left;
+		// now p[break1..break2-1] == cutValue < p[break2..offset+size-1]
 	}
+	// y-axis. the same as x-axis.
 	else
 	{
-		int l = offset;
-		int r = offset + size - 1;
+		int left = offset;
+		int right = offset + size - 1;
 		for (;;)
 		{
-			while (l < (size + offset) && p[GlobalData::SortedIndices[l]].m_y < cutValue)
+			while (left < (size + offset) && p[GlobalData::SortedIndices[left]].m_y < cutValue)
 			{
-				l++;
+				left++;
 			}
-			while (r >= 0 && p[GlobalData::SortedIndices[r]].m_y >= cutValue)
+			while (right >= 0 && p[GlobalData::SortedIndices[right]].m_y >= cutValue)
 			{
-				r--;
+				right--;
 			}
-			if (l > r)
+			if (left > right)
 			{
 				break;
 			}
-			int temp = GlobalData::SortedIndices[l];
-			GlobalData::SortedIndices[l] = GlobalData::SortedIndices[r];
-			GlobalData::SortedIndices[r] = temp;
-			l++;
-			r--;
+			int temp = GlobalData::SortedIndices[left];
+			GlobalData::SortedIndices[left] = GlobalData::SortedIndices[right];
+			GlobalData::SortedIndices[right] = temp;
+			left++;
+			right--;
 		}
-		lowBreak = l;
-		r = offset + size - 1;
+		break1 = left;
+		right = offset + size - 1;
 		for (;;)
 		{
-			while (l < (offset + size) && p[GlobalData::SortedIndices[l]].m_y <= cutValue)
+			while (left < (offset + size) && p[GlobalData::SortedIndices[left]].m_y <= cutValue)
 			{
-				l++;
+				left++;
 			}
-			while (r >= lowBreak && p[GlobalData::SortedIndices[r]].m_y > cutValue)
+			while (right >= break1 && p[GlobalData::SortedIndices[right]].m_y > cutValue)
 			{
-				r--;
+				right--;
 			}
-			if (l > r)
+			if (left > right)
 			{
 				break;
 			}
-			int temp = GlobalData::SortedIndices[l];
-			GlobalData::SortedIndices[l] = GlobalData::SortedIndices[r];
-			GlobalData::SortedIndices[r] = temp;
-			l++;
-			r--;
+			int temp = GlobalData::SortedIndices[left];
+			GlobalData::SortedIndices[left] = GlobalData::SortedIndices[right];
+			GlobalData::SortedIndices[right] = temp;
+			left++;
+			right--;
 		}
-		highBreak = l;
+		break2 = left;
 	}
 }
 
-int64_t KdTree::BoxDistance(const Point& q, const Point& low, const Point& high) const
+int64_t KdTree::GetBoundDistance(const Point& q, const Point& low, const Point& high) const
 {
 	int64_t distance = 0;
 	int64_t t;
