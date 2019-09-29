@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <math.h>
 
 void validateResults_Thread(const std::vector<std::pair<Point, Point>>& solution, const std::vector<std::pair<Point, Point>>& result, uint32_t offset, uint32_t size, uint8_t *isCorrect, uint32_t *errorIndex)
 {

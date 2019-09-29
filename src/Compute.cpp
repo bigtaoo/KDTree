@@ -3,6 +3,7 @@
 #include "../include/KdTree.h"
 #include <algorithm>
 #include <thread>
+#include <math.h>
 
 void computeResult_Thread(const KdTree* kdTree, const std::vector<Point>& points, std::vector<std::pair<Point, Point>>& pointPairs, uint32_t offset, uint32_t size)
 {

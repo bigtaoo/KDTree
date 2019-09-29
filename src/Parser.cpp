@@ -1,5 +1,7 @@
 #include "../include/Parser.h"
 #include <fstream>
+#include <ios>
+#include <iostream>
 
 std::vector<Point> Parser::readPoints(const std::string& fileName)
 {
@@ -8,6 +10,12 @@ std::vector<Point> Parser::readPoints(const std::string& fileName)
 	std::fstream file;
 	
 	file.open(fileName, std::fstream::in);
+    
+    if(file.rdstate() != std::ios::goodbit)
+    {
+        std::cout << "Read Points failed" << std::endl;
+        return points;
+    }
 
 	while (!file.eof())
 	{
@@ -31,6 +39,12 @@ std::vector<std::pair<Point, Point>> Parser::readSolution(const std::string& fil
 
 	std::fstream file;
 	file.open(fileName, std::fstream::in);
+    
+    if(file.rdstate() != std::ios::goodbit)
+    {
+        std::cout << "Read Solution failed" << std::endl;
+        return solution;
+    }
 
 	while (!file.eof())
 	{
