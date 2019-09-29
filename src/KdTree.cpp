@@ -30,7 +30,7 @@ KdTree::KdTree(const std::vector<Point>& p) : m_root(nullptr)
 	m_high = boundBox.m_high;
 
 	// build the tree.
-	m_root = RecursiveBuildKdTree(p, 0, len, 2, boundBox);
+	m_root = RecursiveBuildKdTree(p, 0, len, boundBox);
 }
 
 KdTree::~KdTree() 
@@ -106,7 +106,7 @@ void KdTree::GetBoundBox(const std::vector<Point>& p, KdBounds& bound)
 	bound.m_high.m_y = high;
 }
 
-void KdTree::Split(const std::vector<Point>& p, int offset, int size, int dimension, const KdBounds& bound, int& cutDimension, int32_t& cutValue, int& lowPointsNumber)
+void KdTree::Split(const std::vector<Point>& p, int offset, int size, const KdBounds& bound, int& cutDimension, int32_t& cutValue, int& lowPointsNumber)
 {
 	// determine the cut dimension.
 	// compare the spread on each dimension and choose the larger one.
@@ -177,7 +177,7 @@ void KdTree::Split(const std::vector<Point>& p, int offset, int size, int dimens
 	}
 	else
 	{
-		// all the element is the same.
+		// all of the elements are the same.
 		lowPointsNumber = size / 2;
 	}
 }
@@ -411,7 +411,7 @@ int64_t KdTree::GetBoundDistance(const Point& q, const Point& low, const Point& 
 	return distance;
 }
 
-KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int offset, int size, int Dimension, KdBounds& bound)
+KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int offset, int size, KdBounds& bound)
 {
 	// this split has no elements.
 	if (size == 0)
@@ -429,7 +429,7 @@ KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int offset, in
 		int32_t cutDimension, cutValue, lowPointsNumber;
 		KdNode* low, * high;
 
-		Split(p, offset, size, Dimension, bound, cutDimension, cutValue, lowPointsNumber);
+		Split(p, offset, size, bound, cutDimension, cutValue, lowPointsNumber);
 
 		// split x-axis.
 		if (cutDimension == 0)
@@ -438,11 +438,11 @@ KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int offset, in
 			int32_t highValue = bound.m_high.m_x;
 
 			bound.m_high.m_x = cutValue;
-			low = RecursiveBuildKdTree(p, offset, lowPointsNumber, Dimension, bound);
+			low = RecursiveBuildKdTree(p, offset, lowPointsNumber, bound);
 			bound.m_high.m_x = highValue;
 
 			bound.m_low.m_x = cutValue;
-			high = RecursiveBuildKdTree(p, offset + lowPointsNumber, size - lowPointsNumber, Dimension, bound);
+			high = RecursiveBuildKdTree(p, offset + lowPointsNumber, size - lowPointsNumber, bound);
 			bound.m_low.m_x = lowValue;
 
 			KdSplit *ptr = new KdSplit(cutDimension, cutValue, lowValue, highValue, low, high);
@@ -455,11 +455,11 @@ KdNode* KdTree::RecursiveBuildKdTree(const std::vector<Point>& p, int offset, in
 			int32_t highValue = bound.m_high.m_y;
 
 			bound.m_high.m_y = cutValue;
-			low = RecursiveBuildKdTree(p, offset, lowPointsNumber, Dimension, bound);
+			low = RecursiveBuildKdTree(p, offset, lowPointsNumber, bound);
 			bound.m_high.m_y = highValue;
 
 			bound.m_low.m_y = cutValue;
-			high = RecursiveBuildKdTree(p, offset + lowPointsNumber, size - lowPointsNumber, Dimension, bound);
+			high = RecursiveBuildKdTree(p, offset + lowPointsNumber, size - lowPointsNumber, bound);
 			bound.m_low.m_y = lowValue;
 
 			KdSplit *ptr = new KdSplit(cutDimension, cutValue, lowValue, highValue, low, high);
